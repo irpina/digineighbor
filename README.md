@@ -11,7 +11,8 @@ It is an [elekloader](https://github.com/irpina/elekloader) mod for OS
 stock OS file and the mods you pick; nothing from Elektron is distributed.
 
 **A prototype.** The routing has run on a unit. TUNE, GAIN, LEV and the
-trimmed page (0.4 and 0.5) have so far only been checked in the emulator.
+trimmed page (0.4 and 0.5), and core 2.1's machine slots (0.6), have so
+far only been checked in the emulator.
 
 ## What it does
 
@@ -57,9 +58,12 @@ You need three things:
     needs, is built in.
   - **Other systems:** run elekloader from source with Python 3.9 or newer
     (see [its README](https://github.com/irpina/elekloader#install)). There
-    you also need `core-2.0a.elemod`, which is attached to this repository's
+    you also need `core-2.1.elemod`, which is attached to this repository's
     releases too.
-- **This mod:** `digineighbor-0.5.elemod`, from
+  - digineighbor 0.6 needs **core 2.1** or later (its machine slots). The
+    Windows app builds with the core it bundles, so it needs a release
+    with core 2.1.
+- **This mod:** `digineighbor-0.6.elemod`, from
   [this repository's releases](https://github.com/irpina/digineighbor/releases/latest).
 - **The stock OS file:** `Digitakt_OS1.53.syx`, from
   [Elektron's Digitakt downloads](https://www.elektron.se/support-downloads/digitakt).
@@ -69,15 +73,15 @@ You need three things:
 Then build your OS in elekloader's window:
 
 1. **Change stock firmware...** (top right): choose `Digitakt_OS1.53.syx`.
-2. **+ Install from file...**: choose `digineighbor-0.5.elemod`. From
-   source, install `core-2.0a.elemod` the same way.
+2. **+ Install from file...**: choose `digineighbor-0.6.elemod`. From
+   source, install `core-2.1.elemod` the same way.
 3. **Tick digineighbor.** core is ticked with it. The check below the list
    should say "No conflicts ... Ready to build". It links with
    [digislicer](https://github.com/irpina/digislicer) and
    [digihealth](https://github.com/irpina/digihealth) too: install and tick
    them as well if you want them.
 4. **OS version shown**: the 4 characters the unit will show, for example
-   `NB05`.
+   `NB06`.
 5. **BUILD FIRMWARE**, and save the `.syx`. elekloader verifies it before
    writing it.
 
@@ -94,8 +98,8 @@ Or on the command line (elekloader from source):
 
 ```bash
 python -m elekloader.patch --stock Digitakt_OS1.53.syx \
-    --mod core-2.0a.elemod --mod digineighbor-0.5.elemod \
-    --out Digitakt_OS1.53-neighbor.syx --version NB05
+    --mod core-2.1.elemod --mod digineighbor-0.6.elemod \
+    --out Digitakt_OS1.53-neighbor.syx --version NB06
 ```
 
 **Recovery:** elekloader never changes the bootloader, so the stock OS
@@ -113,15 +117,15 @@ Ubuntu, `apt install binutils-m68k-linux-gnu gcc-m68k-linux-gnu`; on
 Windows, inside WSL) and elekloader:
 
 ```bash
-python -m elekloader.sdk.build . --stock Digitakt_OS1.53.syx       # -> out/digineighbor-0.5.elemod
-python -m elekloader.lint out/digineighbor-0.5.elemod --stock Digitakt_OS1.53.syx --with core-2.0a.elemod
+python -m elekloader.sdk.build . --stock Digitakt_OS1.53.syx       # -> out/digineighbor-0.6.elemod
+python -m elekloader.lint out/digineighbor-0.6.elemod --stock Digitakt_OS1.53.syx --with core-2.1.elemod
 ```
 
 | file | |
 |---|---|
-| `mod.json` | the mod: its sites and resources (machine 4) |
+| `mod.json` | the mod: its sites, its machine (in core's machine slots) and resources (machine 4) |
 | `neighbor.c` | the render's work: the tap, the inject, the pitch shifter, LEV and GAIN, GAIN's text |
-| `glue.s` | the patched sites: the machine menu, the names, the SRC page (layout, labels, GAIN's knob), the render hooks |
+| `glue.s` | the machine (its core descriptor, names and icon) and the patched sites: the SRC page (layout, labels, GAIN's knob), the render hooks |
 
 ## How it works
 
@@ -136,11 +140,18 @@ the mod hooks two points:
   LEV. Its whole chain then runs on it.
 
 **A fifth machine.** The OS has four SRC machines (ONESHOT, WERP, REPITCH,
-SLICE, stored per sound). NEIGHBOR is machine 4. The machine menu lists five
-entries and scrolls to the fifth, with an arrow icon, and the machine setter
-takes 4. Machine 4 uses SLICE's parameters, so a change of machine reaches
-the render. The OS's voice start gives an unknown machine an empty sample
-window, so B's own sample plays nothing.
+SLICE, stored per sound). NEIGHBOR is machine 4, added through core's
+machine slots (core 2.1): the mod gives core its names, its arrow icon, the
+stock machine whose parameters it takes (SLICE's, so a change of machine
+reaches the render) and the machine the render sees (4 itself). Core does
+the rest: the menu lists it after SLICE and scrolls to it, the setter takes
+it, and a loaded kit keeps it. The OS's voice start gives an unknown machine
+an empty sample window, so B's own sample plays nothing. Other mods can add
+machines alongside (digislicer's DIGISLICER is 5).
+
+Up to 0.5 the mod patched the machine menu itself, and a kit loaded back
+turned NEIGHBOR tracks into ONESHOT: the OS loads any machine past 3 as
+ONESHOT. Core 2.1 keeps the machines mods add.
 
 **The page** is a copy of SLICE's with PLAY, SAMP and GRID emptied, SLICE
 shown as SLOT and LEN as GAIN. The page asks for its layout, with its own
@@ -171,14 +182,6 @@ at full scale. At 0 dB the block is left alone.
 
 | site | what |
 |---|---|
-| `0x40022fe6` | the machine list has 5 entries |
-| `0x4002a76e` | the machine menu scrolls (4 rows, not 6) |
-| `0x4002a9e8` | reopening the menu selects NEIGHBOR |
-| `0x4002a4ca` | stepping onto NEIGHBOR moves the menu's cursor to it |
-| `0x40029e9c` | NEIGHBOR's icon in the machine menu, an arrow |
-| `0x400225f0` | the machine setter takes 4 |
-| `0x40078f72` | machine 4 uses SLICE's parameters, so the render hears of the change |
-| `0x40079124`, `0x40079144` | the names NEIGHBOR / NBR |
 | `0x400657cc` | the SRC page's layout: NEIGHBOR's own (TUNE, BR, SLOT, GAIN, LEV); remembers which machine's page is asking |
 | `0x4000fe8a`, `0x4000feac` | knobs E and F's labels and pop-up names on a NEIGHBOR page: SLOT/"Source Slot", GAIN/"Gain" |
 | `0x40065794` | GAIN's knob uses BR's UI record: its feel, and value text |
@@ -219,6 +222,17 @@ linked in too, and FAST AUDIO off and on:
   first differ when the machine menu opens, where NEIGHBOR is listed.
 - **On a unit:** the routing (0.2) played track 1 through track 2 for about
   13 minutes.
+- **0.6 (core 2.1's machine slots),** linked with core 2.1, digihealth and
+  digislicer 2.0:
+  - The menu lists NEIGHBOR after SLICE and DIGISLICER after it, each with
+    its icon; the cursor follows the machine, and the list scrolls to it.
+  - Chosen in the menu, the sound's machine is 4 and the render's too; the
+    page is SLICE's parameters; the source knob sets it, and track 2 is fed
+    450 blocks in 300 ms, as with 0.5.
+  - The firmware's sound loader keeps a stored machine 4.
+  - A cold boot against stock: the check's nine screens are identical, and
+    the audio too, apart from the recording's silent end being 1 ms longer.
+  - Not yet tried on a unit.
 
 ## Limits
 

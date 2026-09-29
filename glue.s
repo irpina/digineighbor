@@ -46,56 +46,15 @@ nb_copy32:
         bne.s   1b
         rts
 
-| At 0x40078f72 in 0x40078f44(index, machine), a sound parameter's descriptor
-| for a machine (was: moveq #3,d2 ; cmp.l d0,d2 ; bcs.s none): machines 0-3
-| have 8 machine parameters each (indices 0x11-0x18), anything else none. So
-| switching to 4 reset and announced nothing, and the render never took the
-| new machine. NEIGHBOR (4) takes SLICE's (3), as its SRC page already does.
-| By jsr, d0 = the machine: back to 0x40078f78 with d0 0-3, or to the
-| "none" exit 0x40078f54 past 4. d2 is scratch there.
-        .globl  nb_mapm
-nb_mapm:
-        moveq   #4, %d2
-        cmp.l   %d0, %d2
-        bcs.s   2f                      | past 4: none
-        bne.s   1f                      | 0-3: as they are
-        moveq   #3, %d0                 | NEIGHBOR: SLICE's parameters
-1:      rts
-2:      move.l  #0x40078f54, (%sp)
-        rts
-
-| The machine menu's icon. At 0x40029e9c, the entry of the menu item's icon
-| callback (was: lea -12(sp),sp ; movem.l d2-d4,(sp)), by jmp: (sp) return,
-| 8 the item, 12 the screen, 16 x, 20 y. The four stock icons are Bitmaps
-| picked by 0x401c2e0c[machine]; past 3 it draws none. NEIGHBOR (4) gets
-| nb_icon_bmp, drawn as they are: blit(screen, bitmap, x + 2, y - 1, 0),
-| a tail call. Anything else goes on to the stock code.
-        .equ    ITEM_ID,  0x400c3fb8    | a menu item's id (the machine)
-        .equ    BLIT,     0x400c2960    | blit(dst, src, x, y, centre)
+| NEIGHBOR, machine 4, for core's machine slots (core 2.1, docs/ADAPTING.md
+| "SRC machines"): its names, its menu icon, SLICE's parameters (its SRC
+| page is SLICE's, trimmed by nb_layout), and machine 4 in the render: an
+| empty voice window, which nb_inject fills.
         .equ    BMP_VT,   0x401b73b4    | the firmware's Bitmap vtable
-        .globl  nb_icon
-nb_icon:
-        move.l  8(%sp), -(%sp)
-        jsr     ITEM_ID
-        addq.l  #4, %sp
-        moveq   #4, %d1
-        cmp.l   %d1, %d0
-        bne.s   1f
-        move.l  12(%sp), %d0            | the screen
-        move.l  %d0, 4(%sp)
-        move.l  #nb_icon_bmp, %d0
-        move.l  %d0, 8(%sp)
-        move.l  16(%sp), %d0            | x + 2
-        addq.l  #2, %d0
-        move.l  %d0, 12(%sp)
-        move.l  20(%sp), %d0            | y - 1
-        subq.l  #1, %d0
-        move.l  %d0, 16(%sp)
-        clr.l   20(%sp)
-        jmp     BLIT
-1:      lea     -12(%sp), %sp           | the replaced instructions
-        movem.l %d2-%d4, (%sp)
-        jmp     0x40029ea4
+        .balign 4
+        .globl  nb_machine
+nb_machine:
+        .long   4, str_long, str_short, nb_icon_bmp, 3, 4
 
 | A Bitmap as the firmware's (the stock icons: 11 x 7, one 32-bit word a
 | column, rows in bits 31-25, pixels then mask). An arrow, after the stock
@@ -298,28 +257,6 @@ str_slot_long:  .asciz  "Source Slot"
 str_gain:       .asciz  "GAIN"
 str_gain_long:  .asciz  "Gain"
         .balign 2
-
-| The machine names: 0x4007910c (long) and 0x4007912c (short) index a table
-| of four and return a default string past it. Their default branches (was:
-| move.l #default,d0 ; rts), by jmp, with d0 = the machine: NEIGHBOR for 4.
-        .globl  nb_longname, nb_shortname
-nb_longname:
-        moveq   #4, %d1
-        cmp.l   %d1, %d0
-        bne.s   1f
-        move.l  #str_long, %d0
-        rts
-1:      move.l  #0x401c4084, %d0
-        rts
-
-nb_shortname:
-        moveq   #4, %d1
-        cmp.l   %d1, %d0
-        bne.s   1f
-        move.l  #str_short, %d0
-        rts
-1:      move.l  #0x401c1d2f, %d0
-        rts
 
 str_long:   .asciz  "NEIGHBOR"
 str_short:  .asciz  "NBR"
