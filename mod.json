@@ -1,15 +1,11 @@
 {
- "id": "digineighbor", "version": "0.5",
+ "id": "digineighbor", "version": "0.6",
+ "license": "GPL-2.0-or-later",
  "title": "digineighbor", "category": "Sampling", "author": "irpina",
  "description": "A fifth SRC machine, NEIGHBOR, like the Octatrack's neighbor machine: the track plays another track's audio (post-filter) through its own overdrive, level, filter, volume, pan and sends, one block (0.67 ms) late. Its SRC page has TUNE (a pitch shifter that follows the trig's note), BR, SLOT (the source track, 1-8), GAIN (0 to +31.5 dB after its own chain) and LEV. A prototype.",
  "device": "digitakt-mk1", "os": "1.53",
  "sources": ["glue.s", "neighbor.c"],
  "sites": [
-  {"addr": "0x40022fe6", "stock": "7004", "op": "bytes", "new": "7005", "kind": "code"},
-  {"addr": "0x4002a76e", "stock": "48780006", "op": "bytes", "new": "48780004", "kind": "code"},
-  {"addr": "0x4002a9e8", "stock": "7804", "op": "bytes", "new": "7805", "kind": "code"},
-  {"addr": "0x4002a4ca", "stock": "7204", "op": "bytes", "new": "7205", "kind": "code"},
-  {"addr": "0x40029e9c", "stock": "4feffff448d7001c", "op": "jmp", "target": "nb_icon"},
   {"addr": "0x400657cc", "stock": "7203202f0004", "op": "jmp", "target": "nb_layout"},
   {"addr": "0x4000fe8a", "stock": "222f00080c81000000a4", "op": "jmp", "target": "nb_lab_short"},
   {"addr": "0x4000feac", "stock": "222f00080c81000000a4", "op": "jmp", "target": "nb_lab_long"},
@@ -17,12 +13,11 @@
   {"addr": "0x4000f2bc", "stock": "4fefffec48d7007c", "op": "jmp", "target": "nb_knob_gfx"},
   {"addr": "0x40065794", "stock": "222f00040c81000000a4", "op": "jmp", "target": "nb_ui_rec"},
   {"addr": "0x400657ee", "stock": "222f00040c81000000a4", "op": "jmp", "target": "nb_pop_text"},
-  {"addr": "0x400225f0", "stock": "7003", "op": "bytes", "new": "7004", "kind": "code"},
-  {"addr": "0x40078f72", "stock": "7403b48065dc", "op": "jsr", "target": "nb_mapm"},
-  {"addr": "0x40079124", "stock": "203c401c4084", "op": "jmp", "target": "nb_longname"},
-  {"addr": "0x40079144", "stock": "203c401c1d2f", "op": "jmp", "target": "nb_shortname"},
   {"addr": "0x40077fba", "stock": "49f94199e444", "op": "jsr", "target": "nb_inject_s"},
   {"addr": "0x40078142", "stock": "06804ba8f080", "op": "jsr", "target": "nb_tap_s"}
+ ],
+ "contribute": [
+  {"to": "core_machines", "order": 50, "data": "00000000", "relocs": [[0, "abs32", "sym:nb_machine", 0]]}
  ],
  "requires": ["core"],
  "resources": {"names": ["machine:4"]}
