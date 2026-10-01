@@ -1,6 +1,12 @@
 | SPDX-License-Identifier: GPL-2.0-or-later
 | digineighbor: the patched sites (neighbor.c has the render's work).
-| ColdFire V4 (MCF54418), Digitakt mk1 OS 1.53.
+| ColdFire V4 (MCF54418), Digitakt mk1 OS 1.53 and 1.54. The addresses in the
+| comments are 1.53's; the code takes them from os153.inc or os154.inc.
+        .ifdef  OS154                   | the Digitakt mk1 1.54 (mod.json's port)
+        .include "os154.inc"
+        .else                           | the Digitakt mk1 1.53
+        .include "os153.inc"
+        .endif
 
         .section .run, "ax"
 
@@ -15,7 +21,7 @@ nb_inject_s:
         jsr     nb_inject
         movem.l (%sp), %d0-%d7/%a0-%a6
         lea     60(%sp), %sp
-        lea     0x4199e444, %a4
+        lea     INJECT_LEA, %a4
         rts
 
 | At 0x40078142, the last instruction before the mixer call 0x40071c20
@@ -28,7 +34,7 @@ nb_tap_s:
         jsr     nb_tap
         movem.l (%sp), %d0-%d7/%a0-%a6
         lea     60(%sp), %sp
-        addi.l  #0x4ba8f080, %d0
+        addi.l  #TAP_ADD, %d0
         rts
 
 | nb_copy32(dst, src): 32 longs, with separate source and destination
@@ -50,7 +56,6 @@ nb_copy32:
 | "SRC machines"): its names, its menu icon, SLICE's parameters (its SRC
 | page is SLICE's, trimmed by nb_layout), and machine 4 in the render: an
 | empty voice window, which nb_inject fills.
-        .equ    BMP_VT,   0x401b73b4    | the firmware's Bitmap vtable
         .balign 4
         .globl  nb_machine
 nb_machine:
@@ -89,7 +94,6 @@ nb_icon_mask:
 |   +0/+4 are the firmware's objects), keeping TUNE, BR, SLICE (as SLOT),
 |   LEN (as GAIN, 0.5) and LEV, and emptying PLAY, SAMP and GRID;
 | - anything else goes on to the stock code, at its compare.
-        .equ    LAY_SLICE, 0x4197cf5c
         .globl  nb_layout
 nb_layout:
         move.l  4(%sp), %d0
@@ -98,7 +102,7 @@ nb_layout:
         cmp.l   %d1, %d0
         beq.s   1f
         moveq   #3, %d1
-        jmp     0x400657d2
+        jmp     LAYOUT_ON
 1:      tst.l   nb_lay_ok
         bne.s   3f
         lea     LAY_SLICE, %a0
@@ -132,7 +136,7 @@ nb_lab_short:
         bne.s   9f
         move.l  8(%sp), %d1
         cmpi.l  #164, %d1
-        jmp     0x4000fe94
+        jmp     LAB_SHORT_ON
 9:      rts
 
 nb_lab_long:
@@ -141,7 +145,7 @@ nb_lab_long:
         bne.s   9f
         move.l  8(%sp), %d1
         cmpi.l  #164, %d1
-        jmp     0x4000feb6
+        jmp     LAB_LONG_ON
 9:      rts
 
 | a0 = {source's, gain's} names. -> d0 = the caller's id's name on a
@@ -192,7 +196,7 @@ nb_val_text:
         rts
 1:      lea     -20(%sp), %sp
         movem.l %d2-%d4/%a2-%a3, (%sp)
-        jmp     0x4000f32c
+        jmp     VAL_TEXT_ON
 
 | - 0x400657ee(id, value) -> the pop-up's value text (a static buffer), at
 |   its entry (was: move.l 4(sp),d1 ; cmpi.l #164,d1), by jmp.
@@ -209,7 +213,7 @@ nb_pop_text:
         rts
 1:      move.l  4(%sp), %d1
         cmpi.l  #164, %d1
-        jmp     0x400657f8
+        jmp     POP_TEXT_ON
 
 | GAIN's knob drawn as BR's (a round knob; LEN's is a bracket and a slice
 | count): 0x4000f2bc(obj, id, value, ...) draws a knob's graphic, at its
@@ -229,7 +233,7 @@ nb_knob_gfx:
         move.l  %d0, 12(%sp)
 1:      lea     -20(%sp), %sp
         movem.l %d2-%d6, (%sp)
-        jmp     0x4000f2c4
+        jmp     KNOB_GFX_ON
 
 | ... and with BR's UI record altogether: 0x40065794(id) returns a
 | parameter's UI record (84 bytes at 0x4197d2f8 + 84 id: flags, the knob's
@@ -247,7 +251,7 @@ nb_ui_rec:
         bra.s   2f
 1:      move.l  4(%sp), %d1
 2:      cmpi.l  #164, %d1
-        jmp     0x4006579e
+        jmp     UI_REC_ON
 
         .balign 4
 nb_short_tab:   .long   str_slot, str_gain
