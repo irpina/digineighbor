@@ -7,7 +7,7 @@ Any track can be the source. It adds a pitch shifter (TUNE) and an
 amplifier (GAIN).
 
 It is an [elekloader](https://github.com/irpina/elekloader) mod for OS
-1.53. elekloader builds a custom OS file on your own machine, from your
+1.53 and 1.54, a file for each. elekloader builds a custom OS file on your own machine, from your
 stock OS file and the mods you pick; nothing from Elektron is distributed.
 
 **A prototype.** The routing has run on a unit. TUNE, GAIN, LEV and the
@@ -58,23 +58,27 @@ You need three things:
     needs, is built in.
   - **Other systems:** run elekloader from source with Python 3.9 or newer
     (see [its README](https://github.com/irpina/elekloader#install)). There
-    you also need `core-2.1.elemod`, which is attached to this repository's
-    releases too.
+    you also need core 2.1 for your OS, `core-2.1.elemod` (1.53) or
+    `core-2.1-os1.54.elemod` (1.54), which are attached to this
+    repository's releases too.
   - digineighbor 0.6 needs **core 2.1** or later (its machine slots). The
     Windows app builds with the core it bundles, so it needs a release
-    with core 2.1.
-- **This mod:** `digineighbor-0.6.elemod`, from
-  [this repository's releases](https://github.com/irpina/digineighbor/releases/latest).
-- **The stock OS file:** `Digitakt_OS1.53.syx`, from
+    with core 2.1, and for OS 1.54 elekloader 0.4.0 or later.
+- **This mod**, from
+  [this repository's releases](https://github.com/irpina/digineighbor/releases/latest):
+  `digineighbor-0.6.elemod` for OS 1.53, `digineighbor-0.6-os1.54.elemod`
+  for OS 1.54. They are the same mod.
+- **The stock OS file** your unit runs: `Digitakt_OS1.54.syx` or
+  `Digitakt_OS1.53.syx`, from
   [Elektron's Digitakt downloads](https://www.elektron.se/support-downloads/digitakt).
-  The mod is for the Digitakt mk1 on OS 1.53 only; elekloader recognises
-  the file by its hash.
+  elekloader recognises it by its hash, and refuses a mod file made for
+  the other OS.
 
 Then build your OS in elekloader's window:
 
-1. **Change stock firmware...** (top right): choose `Digitakt_OS1.53.syx`.
-2. **+ Install from file...**: choose `digineighbor-0.6.elemod`. From
-   source, install `core-2.1.elemod` the same way.
+1. **Change stock firmware...** (top right): choose your stock OS file.
+2. **+ Install from file...**: choose the digineighbor file for that OS.
+   From source, install its core the same way.
 3. **Tick digineighbor.** core is ticked with it. The check below the list
    should say "No conflicts ... Ready to build". It links with
    [digislicer](https://github.com/irpina/digislicer) and
@@ -97,9 +101,9 @@ Don't turn it off until the upgrade is done.
 Or on the command line (elekloader from source):
 
 ```bash
-python -m elekloader.patch --stock Digitakt_OS1.53.syx \
-    --mod core-2.1.elemod --mod digineighbor-0.6.elemod \
-    --out Digitakt_OS1.53-neighbor.syx --version NB06
+python -m elekloader.patch --stock Digitakt_OS1.54.syx \
+    --mod core-2.1-os1.54.elemod --mod digineighbor-0.6-os1.54.elemod \
+    --out Digitakt_OS1.54-neighbor.syx --version NB06
 ```
 
 **Recovery:** elekloader never changes the bootloader, so the stock OS
@@ -118,14 +122,17 @@ Windows, inside WSL) and elekloader:
 
 ```bash
 python -m elekloader.sdk.build . --stock Digitakt_OS1.53.syx       # -> out/digineighbor-0.6.elemod
-python -m elekloader.lint out/digineighbor-0.6.elemod --stock Digitakt_OS1.53.syx --with core-2.1.elemod
+python -m elekloader.sdk.build . --stock Digitakt_OS1.54.syx       # -> out/digineighbor-0.6-os1.54.elemod
+python -m elekloader.lint out/digineighbor-0.6-os1.54.elemod --stock Digitakt_OS1.54.syx --with core-2.1-os1.54.elemod
 ```
 
 | file | |
 |---|---|
-| `mod.json` | the mod: its sites, its machine (in core's machine slots) and resources (machine 4) |
+| `mod.json` | the mod: its sites, its machine (in core's machine slots) and resources (machine 4); under `ports`, 1.54's sites |
 | `neighbor.c` | the render's work: the tap, the inject, the pitch shifter, LEV and GAIN, GAIN's text |
 | `glue.s` | the machine (its core descriptor, names and icon) and the patched sites: the SRC page (layout, labels, GAIN's knob), the render hooks |
+| `os153.inc`, `os154.inc` | the stock code and data `glue.s` uses, for each OS (1.54's port defines `OS154`) |
+| `os153.h`, `os154.h` | the same for `neighbor.c` |
 
 ## How it works
 
@@ -233,6 +240,19 @@ linked in too, and FAST AUDIO off and on:
   - A cold boot against stock: the check's nine screens are identical, and
     the audio too, apart from the recording's silent end being 1 ms longer.
   - Not yet tried on a unit.
+- **OS 1.54** (the same mod, with 1.54's addresses), in the emulator:
+  - core + digineighbor against stock 1.54: every stage passes, and
+    the check's nine screens are identical.
+  - With core, digihealth and digislicer, against the same four for
+    1.53: the machine menu through to NEIGHBOR's SRC page is
+    identical, screen for screen.
+    The emulator's cold boot has no samples, so these runs play
+    silence: they check the screens and that nothing sounds, not
+    the audio of a playing sample.
+  - So the routing, TUNE and GAIN have not been run on 1.54. Their
+    render sites are where 1.53 has them; the two operands that moved
+    with the RAM (the inject site's lea, the tap site's addi) are
+    replayed from os154.inc. Not yet tried on a unit.
 
 ## Limits
 

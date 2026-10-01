@@ -23,6 +23,12 @@
  * block per hop, and the pitch shifter 3 to 27 ms more. Both
  * run in the render (interrupt level 5): short, no firmware calls.
  */
+#ifdef OS154                       /* the Digitakt mk1 1.54 (mod.json's port) */
+#include "os154.h"
+#else                              /* the Digitakt mk1 1.53 */
+#include "os153.h"
+#endif
+
 typedef unsigned char u8;
 typedef short s16;
 typedef int s32;
@@ -31,19 +37,19 @@ typedef unsigned int u32;
 #define NB_MACHINE  4
 #define TRACKS      8
 #define BLOCK       32
-#define TBUF(t)     ((s32 *)(0x80001a18 + 128 * (t)))            /* a track's block */
-#define MACH(t)     (*(volatile const u8 *)(0x800018bc + (t)))    /* its machine */
+#define TBUF(t)     ((s32 *)(OS_TBUF + 128 * (t)))            /* a track's block */
+#define MACH(t)     (*(volatile const u8 *)(OS_MACH + (t)))    /* its machine */
 /* The render's voice parameters, 106 bytes a track at 0x80002794, 8.8. */
-#define VP(t, o)    (*(volatile const s16 *)(0x80002794 + 106 * (t) + (o)))
+#define VP(t, o)    (*(volatile const s16 *)(OS_VP + 106 * (t) + (o)))
 #define P_TUNE      0       /* semitones, 0x4000 = 0 */
 #define P_SLOT      8       /* SLICE: the source track */
 #define P_GAIN      10      /* LEN, 0-63: GAIN, 0.5 dB a step */
 #define P_LEV       14      /* 0-127 */
-#define NOTE(t)     (*(volatile const s32 *)(0x80001f28 + 4 * (t)))   /* the trig's note, 16.16, 60 = none */
-#define VEL(t)      (*(volatile const s16 *)(0x80001f18 + 2 * (t)))   /* its velocity, 8.8 */
+#define NOTE(t)     (*(volatile const s32 *)(OS_NOTE + 4 * (t)))   /* the trig's note, 16.16, 60 = none */
+#define VEL(t)      (*(volatile const s16 *)(OS_VEL + 2 * (t)))   /* its velocity, 8.8 */
 /* The firmware's pitch table (0x40075184 reads it): 2^((i - 10752)/2048) in
  * Q29, i = 0-14848, indexed by the pitch / 384. */
-#define PITCH_TAB   ((const u32 *)0x4019b1c0)
+#define PITCH_TAB   ((const u32 *)OS_PITCH_TAB)
 #define UNITY       0x20000000u
 
 static s32 nb_saved[TRACKS][BLOCK];     /* each source's last finished block */
