@@ -1,19 +1,11 @@
 {
- "id": "digineighbor", "version": "0.6",
+ "id": "digineighbor", "version": "0.7",
  "license": "GPL-2.0-or-later",
  "title": "digineighbor", "category": "Sampling", "author": "irpina",
- "description": "A fifth SRC machine, NEIGHBOR, like the Octatrack's neighbor machine: the track plays another track's audio (post-filter) through its own overdrive, level, filter, volume, pan and sends, one block (0.67 ms) late. Its SRC page has TUNE (a pitch shifter that follows the trig's note), BR, SLOT (the source track, 1-8), GAIN (0 to +31.5 dB after its own chain) and LEV. A prototype.",
+ "description": "A fifth SRC machine, NEIGHBOR, like the Octatrack's neighbor machine: the track plays another track's audio (post-filter) through its own overdrive, level, filter, volume, pan and sends, one block (0.67 ms) late. Its SRC page has TUNE (a pitch shifter that follows the trig's note), BR, SLOT (the source track, 1-8), GAIN (0 to +31.5 dB after its own chain) and LEV. Its page is drawn by machine-pages (core 3.0), so it combines with the other machines that describe theirs. A prototype.",
  "device": "digitakt-mk1", "os": "1.53",
  "sources": ["glue.s", "neighbor.c"],
  "sites": [
-  {"addr": "0x400657cc", "stock": "7203202f0004", "op": "jmp", "target": "nb_layout"},
-  {"addr": "0x4000fe8a", "stock": "222f00080c81000000a4", "op": "jmp", "target": "nb_lab_short"},
-  {"addr": "0x4000feac", "stock": "222f00080c81000000a4", "op": "jmp", "target": "nb_lab_long"},
-  {"addr": "0x4000f324", "stock": "4fefffec48d70c1c", "op": "jmp", "target": "nb_val_text"},
-  {"addr": "0x4000f2bc", "stock": "4fefffec48d7007c", "op": "jmp", "target": "nb_knob_gfx"},
-  {"addr": "0x40065794", "stock": "222f00040c81000000a4", "op": "jmp", "target": "nb_ui_rec"},
-  {"addr": "0x400657ee", "stock": "222f00040c81000000a4", "op": "jmp", "target": "nb_pop_text"},
-  {"addr": "0x40077fba", "stock": "49f94199e444", "op": "jsr", "target": "nb_inject_s"},
   {"addr": "0x40078142", "stock": "06804ba8f080", "op": "jsr", "target": "nb_tap_s"}
  ],
  "ports": {
@@ -21,21 +13,12 @@
    "defsym": {"OS154": "1"},
    "cflags": ["-DOS154"],
    "sites": [
-    {"addr": "0x400657cc", "stock": "7203202f0004", "op": "jmp", "target": "nb_layout"},
-    {"addr": "0x4000fe8a", "stock": "222f00080c81000000a4", "op": "jmp", "target": "nb_lab_short"},
-    {"addr": "0x4000feac", "stock": "222f00080c81000000a4", "op": "jmp", "target": "nb_lab_long"},
-    {"addr": "0x4000f324", "stock": "4fefffec48d70c1c", "op": "jmp", "target": "nb_val_text"},
-    {"addr": "0x4000f2bc", "stock": "4fefffec48d7007c", "op": "jmp", "target": "nb_knob_gfx"},
-    {"addr": "0x40065794", "stock": "222f00040c81000000a4", "op": "jmp", "target": "nb_ui_rec"},
-    {"addr": "0x400657ee", "stock": "222f00040c81000000a4", "op": "jmp", "target": "nb_pop_text"},
-    {"addr": "0x40077fba", "stock": "49f94199f444", "op": "jsr", "target": "nb_inject_s"},
     {"addr": "0x40078142", "stock": "06804ba9f080", "op": "jsr", "target": "nb_tap_s"}
    ]
   }
  },
- "contribute": [
-  {"to": "core_machines", "order": 50, "data": "00000000", "relocs": [[0, "abs32", "sym:nb_machine", 0]]}
- ],
- "requires": ["core"],
- "resources": {"names": ["machine:4"]}
+ "machines": [{"id": 4, "descriptor": "nb_machine", "order": 50}],
+ "subscribe": [{"event": "ev_render_voices", "fn": "nb_inject", "order": 60}],
+ "requires": ["core", "machine-pages"],
+ "resources": {"core": "3.0"}
 }

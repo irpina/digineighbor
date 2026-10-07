@@ -10,9 +10,15 @@ It is an [elekloader](https://github.com/irpina/elekloader) mod for OS
 1.53 and 1.54, a file for each. elekloader builds a custom OS file on your own machine, from your
 stock OS file and the mods you pick; nothing from Elektron is distributed.
 
-**A prototype.** The routing has run on a unit. TUNE, GAIN, LEV and the
-trimmed page (0.4 and 0.5), and core 2.1's machine slots (0.6), have so
-far only been checked in the emulator.
+**A prototype.** The routing has run on a unit, and 0.7 too, on OS 1.54,
+beside the other machines built for core 3.0. TUNE, GAIN, LEV and the
+trimmed page (0.4 and 0.5) and core 2.1's machine slots (0.6) have so far
+only been checked in the emulator.
+
+**0.7 needs core 3.0 and elekloader's machine-pages mod**, which draws its
+SRC and LFO pages from what it describes. That is what lets it share a
+build with the other machines built that way: SOPHIE, DIGISLICER 2.3 and
+Digi Mono. For core 2.1, use 0.6: it is the same machine.
 
 ## What it does
 
@@ -61,12 +67,13 @@ You need three things:
     you also need core 2.1 for your OS, `core-2.1.elemod` (1.53) or
     `core-2.1-os1.54.elemod` (1.54), which are attached to this
     repository's releases too.
-  - digineighbor 0.6 needs **core 2.1** or later (its machine slots). The
-    Windows app builds with the core it bundles, so it needs a release
-    with core 2.1, and for OS 1.54 elekloader 0.4.0 or later.
+  - digineighbor 0.7 needs **core 3.0** and **machine-pages**, from
+    elekloader's releases; 0.6 needs core 2.1 (its machine slots). The
+    Windows app builds with the cores it bundles and takes 3.0 when you
+    tick 0.7.
 - **This mod**, from
   [this repository's releases](https://github.com/irpina/digineighbor/releases/latest):
-  `digineighbor-0.6.elemod` for OS 1.53, `digineighbor-0.6-os1.54.elemod`
+  `digineighbor-0.7.elemod` for OS 1.53, `digineighbor-0.7-os1.54.elemod`
   for OS 1.54. They are the same mod.
 - **The stock OS file** your unit runs: `Digitakt_OS1.54.syx` or
   `Digitakt_OS1.53.syx`, from
@@ -79,13 +86,14 @@ Then build your OS in elekloader's window:
 1. **Change stock firmware...** (top right): choose your stock OS file.
 2. **+ Install from file...**: choose the digineighbor file for that OS.
    From source, install its core the same way.
-3. **Tick digineighbor.** core is ticked with it. The check below the list
-   should say "No conflicts ... Ready to build". It links with
-   [digislicer](https://github.com/irpina/digislicer) and
-   [digihealth](https://github.com/irpina/digihealth) too: install and tick
-   them as well if you want them.
+3. **Tick digineighbor.** core and machine-pages are ticked with it. The
+   check below the list should say "No conflicts ... Ready to build". It
+   links with [digislicer](https://github.com/irpina/digislicer) and
+   [digihealth](https://github.com/irpina/digihealth) too, and with every
+   machine built for machine-pages: install and tick them as well if you
+   want them.
 4. **OS version shown**: the 4 characters the unit will show, for example
-   `NB06`.
+   `NB07`.
 5. **BUILD FIRMWARE**, and save the `.syx`. elekloader verifies it before
    writing it.
 
@@ -102,8 +110,9 @@ Or on the command line (elekloader from source):
 
 ```bash
 python -m elekloader.patch --stock Digitakt_OS1.54.syx \
-    --mod core-2.1-os1.54.elemod --mod digineighbor-0.6-os1.54.elemod \
-    --out Digitakt_OS1.54-neighbor.syx --version NB06
+    --mod core-3.0-os1.54.elemod --mod machine-pages-1.0-os1.54.elemod \
+    --mod digineighbor-0.7-os1.54.elemod \
+    --out Digitakt_OS1.54-neighbor.syx --version NB07
 ```
 
 **Recovery:** elekloader never changes the bootloader, so the stock OS
@@ -121,16 +130,17 @@ Ubuntu, `apt install binutils-m68k-linux-gnu gcc-m68k-linux-gnu`; on
 Windows, inside WSL) and elekloader:
 
 ```bash
-python -m elekloader.sdk.build . --stock Digitakt_OS1.53.syx       # -> out/digineighbor-0.6.elemod
-python -m elekloader.sdk.build . --stock Digitakt_OS1.54.syx       # -> out/digineighbor-0.6-os1.54.elemod
-python -m elekloader.lint out/digineighbor-0.6-os1.54.elemod --stock Digitakt_OS1.54.syx --with core-2.1-os1.54.elemod
+python -m elekloader.sdk.build . --stock Digitakt_OS1.53.syx       # -> out/digineighbor-0.7.elemod
+python -m elekloader.sdk.build . --stock Digitakt_OS1.54.syx       # -> out/digineighbor-0.7-os1.54.elemod
+python -m elekloader.lint out/digineighbor-0.7-os1.54.elemod --stock Digitakt_OS1.54.syx \
+    --with core-3.0-os1.54.elemod --with machine-pages-1.0-os1.54.elemod
 ```
 
 | file | |
 |---|---|
-| `mod.json` | the mod: its sites, its machine (in core's machine slots) and resources (machine 4); under `ports`, 1.54's sites |
-| `neighbor.c` | the render's work: the tap, the inject, the pitch shifter, LEV and GAIN, GAIN's text |
-| `glue.s` | the machine (its core descriptor, names and icon) and the patched sites: the SRC page (layout, labels, GAIN's knob), the render hooks |
+| `mod.json` | the mod: its site, its machine (`machines`: machine 4) and its render handler (`ev_render_voices`); under `ports`, 1.54's site |
+| `neighbor.c` | the render's work: the tap, the inject, the pitch shifter, LEV and GAIN, GAIN's text and knob |
+| `glue.s` | the machine (its core descriptor, names, icon and page) and the tap site |
 | `os153.inc`, `os154.inc` | the stock code and data `glue.s` uses, for each OS (1.54's port defines `OS154`) |
 | `os153.h`, `os154.h` | the same for `neighbor.c` |
 
@@ -161,11 +171,14 @@ turned NEIGHBOR tracks into ONESHOT: the OS loads any machine past 3 as
 ONESHOT. Core 2.1 keeps the machines mods add.
 
 **The page** is a copy of SLICE's with PLAY, SAMP and GRID emptied, SLICE
-shown as SLOT and LEN as GAIN. The page asks for its layout, with its own
-track's machine, just before it draws or turns a knob. So the layout hook
-remembers the machine, and the label and knob hooks use it. GAIN's knob
-borrows BR's look and feel (a round knob, a value under it while turned) and
-shows its value in dB.
+shown as SLOT and LEN as GAIN. From 0.7 the mod only describes it, in its
+descriptor's tail (core 3.0), and machine-pages draws it, as it does every
+machine's that describes one; until 0.6 the mod hooked the page itself, so
+no other machine with a page could share its build. GAIN's knob borrows
+BR's look and feel (a round knob, a value under it while turned; its value
+doubled, as BR runs 0-127 where LEN runs 0-63) and shows its value in dB.
+On the LFO page the destinations read as the knobs do: Source Slot and
+Gain, and Unused for PLAY and SAMP.
 
 **TUNE.** The pitch is the firmware's own for a sample: TUNE and the trig's
 note go through the pitch table the playback uses (2048 steps an octave).
@@ -187,15 +200,11 @@ fine), and fades in in phase.
 **GAIN** is 10^(dB/20), ramped over a block when it changes, and saturating
 at full scale. At 0 dB the block is left alone.
 
-| site | what |
-|---|---|
-| `0x400657cc` | the SRC page's layout: NEIGHBOR's own (TUNE, BR, SLOT, GAIN, LEV); remembers which machine's page is asking |
-| `0x4000fe8a`, `0x4000feac` | knobs E and F's labels and pop-up names on a NEIGHBOR page: SLOT/"Source Slot", GAIN/"Gain" |
-| `0x40065794` | GAIN's knob uses BR's UI record: its feel, and value text |
-| `0x4000f324`, `0x400657ee` | GAIN's value as text: "+6.5" under the knob, "+6.5dB" in the pop-up |
-| `0x4000f2bc` | GAIN's knob drawn as BR's round one |
-| `0x40077fba` | inject, after playback |
-| `0x40078142` | tap, before the mixer |
+Its one site is the tap, `0x40078142`, before the mixer. The inject is
+machine-pages' `ev_render_voices` at `0x40077fba`, after playback, with
+order 60: after the machines that make a track's sound, so NEIGHBOR can
+take a SOPHIE track's. Up to 0.6 the mod patched that point and the page's
+seven sites itself.
 
 ## How it was checked
 
@@ -253,6 +262,15 @@ linked in too, and FAST AUDIO off and on:
     render sites are where 1.53 has them; the two operands that moved
     with the RAM (the inject site's lea, the tap site's addi) are
     replayed from os154.inc. Not yet tried on a unit.
+- **0.7 (core 3.0's machine pages),** against 0.6 on core 2.1, in the
+  emulator, through the machine menu, the page, SLOT, GAIN (under the knob,
+  in the pop-up, at its maximum) and TUNE turned, and the LFO page: every
+  screen identical, but the LFO page's DEST list, which now names
+  NEIGHBOR's knobs (Source Slot, Gain; Unused for PLAY and SAMP) where 0.6
+  showed SLICE's; the audio identical. In a build with DIGISLICER 2.3 and
+  SOPHIE too, its screens are the same as alone. On a unit (OS 1.54), in a
+  build of core 3.0 and machine-pages with DIGISLICER 2.3, SOPHIE, Digi
+  Mono, Digi Poly and digihealth: it worked.
 
 ## Limits
 
