@@ -53,10 +53,6 @@ typedef unsigned int u32;
 #define UNITY       0x20000000u
 
 static s32 nb_saved[TRACKS][BLOCK];     /* each source's last finished block */
-u32 nb_lay[11];                         /* NEIGHBOR's SRC page layout (glue.s) */
-u32 nb_lay_ok;
-u32 nb_page_m;                          /* the machine whose layout the UI asked for last (glue.s) */
-char nb_txt[12];                        /* GAIN's pop-up text (glue.s) */
 static s32 nb_gq[TRACKS];               /* each track's last GAIN, Q16, less 1 (so 0 at rest) */
 
 /* glue.s: 32 longs from src to dst. The copies are not C loops: for one, gcc
@@ -166,9 +162,8 @@ static void nb_amp(s32 *d, s32 g0, s32 g1)
     }
 }
 
-/* GAIN's text: "+12.5", and "dB" after it when db (glue.s: the knob's value
- * and the pop-up). v is LEN's value, 8.8. */
-char *nb_fmt_gain(char *b, s32 v, s32 db)
+/* GAIN's text: "+12.5", and "dB" after it when db. v is LEN's value, 8.8. */
+static char *nb_fmt_gain(char *b, s32 v, s32 db)
 {
     s32 t = (v < 0 ? 0 : v) * 5 >> 8, n = t / 10;   /* tenths of a dB */
     char *p = b;
@@ -184,6 +179,20 @@ char *nb_fmt_gain(char *b, s32 v, s32 db)
     }
     *p = 0;
     return b;
+}
+
+/* GAIN on NEIGHBOR's page (glue.s, for machine-pages): its value under the knob (ctx 0) and in the pop-up
+ * (ctx 1, with "dB"); and its knob, BR's, whose graphic runs 0-127 where LEN's value runs 0-63. */
+s32 nb_gain_text(char *buf, s32 v, s32 ctx, s32 machine)
+{
+    (void)machine;
+    nb_fmt_gain(buf, v, ctx);
+    return 1;
+}
+
+s32 nb_gain_gfx(s32 v)
+{
+    return v + v;
 }
 
 /* d[i] = x[i] g, g ramping over the block from g0 to g1 (Q14), saturated. */
